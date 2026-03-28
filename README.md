@@ -1,5 +1,8 @@
 # Git Smart HTTP Server
 
+[![Tests](https://github.com/frbrgeorge/git-smart-http/actions/workflows/test.yml/badge.svg)](https://github.com/frbrgeorge/git-smart-http/actions/workflows/test.yml)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/frbrgeorge/git-smart-http)](https://github.com/frbrgeorge/git-smart-http/releases)
+
 A pure Python implementation of a Git Smart HTTP server with no run dependencies. Developed and maintained using **Google AI Studio**.
 
 ## Features
