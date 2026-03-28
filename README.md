@@ -36,6 +36,7 @@ git-smart-http
 - `-v`, `--verbose`: Increase console verbosity (can be used multiple times).
 - `-l`, `--logfile`: Enable logging to a file (file log level is always fixed at INFO).
 - `-t`, `--trusted-host`: Add a trusted host IP (can be used multiple times).
+- `-b`, `--browser`: Open the server URL in the default web browser.
 - `--version`: Show the version number and exit.
 
 ### Client Usage
