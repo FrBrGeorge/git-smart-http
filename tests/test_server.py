@@ -48,6 +48,25 @@ class TestGitSmartHTTP(unittest.TestCase):
             self.assertIn("Create a New Repository", body)
             self.assertIn("Clone an Existing Repository", body)
 
+    def test_repo_directory_listing(self):
+        # Create a repo and a file inside it
+        repo_name = "listing-repo"
+        repo_path = os.path.join(self.repo_dir, repo_name)
+        os.makedirs(repo_path, exist_ok=True)
+        
+        test_file = "test_file.txt"
+        with open(os.path.join(repo_path, test_file), "w") as f:
+            f.write("test content")
+            
+        # Request the repo directory listing
+        url = f"http://{self.host}:{self.port}/{repo_name}/"
+        with urllib.request.urlopen(url) as response:
+            self.assertEqual(response.status, 200)
+            body = response.read().decode('utf-8')
+            # SimpleHTTPRequestHandler uses "Directory listing for ..."
+            self.assertIn(f"Directory listing for /{repo_name}/", body)
+            self.assertIn(test_file, body)
+
     def test_clone_auto_create(self):
         repo_name = "auto-created.git"
         repo_url = f"http://{self.host}:{self.port}/{repo_name}"

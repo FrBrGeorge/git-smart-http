@@ -21,6 +21,8 @@ ROOT_HTML_TEMPLATE = """
         ul {{ list-style: none; padding: 0; }}
         li {{ background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
         .repo-name {{ font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 5px; }}
+        .repo-name a {{ color: #333; text-decoration: none; }}
+        .repo-name a:hover {{ text-decoration: underline; color: #000; }}
         .link-group {{ margin-top: 10px; }}
         .link-label {{ font-size: 0.9em; color: #666; width: 100px; display: inline-block; }}
         code {{ background: #f9f9f9; padding: 2px 5px; border-radius: 3px; font-family: monospace; }}
@@ -57,7 +59,7 @@ git push -u origin main</pre>
 
 REPO_ITEM_HTML_TEMPLATE = """
 <li>
-    <span class="repo-name">{repo}</span>
+    <span class="repo-name"><a href="/{repo}/">{repo}</a></span>
     <div class="link-group">
         <span class="link-label">Read/Write:</span> <code>http://localhost:{port}/{repo}</code>
         <div class="trusted-info">(Only accessible from trusted hosts: {trusted_hosts})</div>
@@ -112,6 +114,23 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         client_address = self.client_address[0]
         return client_address in self.trusted_hosts
 
+    def send_headers(self, content_type: str, status: int = 200, cache_control: Optional[str] = None):
+        """
+        Send HTTP response status and headers.
+
+        :param content_type: The MIME type of the content.
+        :type content_type: str
+        :param status: The HTTP status code (default: 200).
+        :type status: int
+        :param cache_control: Optional Cache-Control header value.
+        :type cache_control: Optional[str]
+        """
+        self.send_response(status)
+        self.send_header('Content-Type', content_type)
+        if cache_control:
+            self.send_header('Cache-Control', cache_control)
+        self.end_headers()
+
     def do_GET(self):
         """
         Handle GET requests. Routes to Git info/refs or falls back to SimpleHTTPRequestHandler.
@@ -152,9 +171,7 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         """
         Serve a simple HTML page listing repositories and providing instructions.
         """
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.end_headers()
+        self.send_headers('text/html; charset=utf-8')
 
         local_ip = get_local_ip()
         port = self.server.server_port
@@ -214,10 +231,7 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
             self.send_error(403, "Forbidden: Push only allowed from trusted hosts")
             return
 
-        self.send_response(200)
-        self.send_header('Content-Type', f'application/x-{service}-advertisement')
-        self.send_header('Cache-Control', 'no-cache')
-        self.end_headers()
+        self.send_headers(f'application/x-{service}-advertisement', cache_control='no-cache')
 
         # Packet line format: 4 hex chars length + content
         # Service advertisement: # service=git-upload-pack\n0000
@@ -245,10 +259,7 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
             self.send_error(404, "Repository Not Found")
             return
 
-        self.send_response(200)
-        self.send_header('Content-Type', f'application/x-{service}-result')
-        self.send_header('Cache-Control', 'no-cache')
-        self.end_headers()
+        self.send_headers(f'application/x-{service}-result', cache_control='no-cache')
 
         # Read POST body and pipe to git service
         content_length = int(self.headers.get('Content-Length', 0))
