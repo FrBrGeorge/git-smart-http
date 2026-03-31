@@ -13,8 +13,8 @@ class TestGitSmartHTTP(unittest.TestCase):
     def setUpClass(cls):
         cls.host = "127.0.0.1"
         # Find a free port
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            s.bind(('::', 0))
             cls.port = s.getsockname()[1]
         cls.repo_dir = Path("test_repos")
         cls.trusted_addresses = ["127.0.0.1", "::1"]
@@ -25,11 +25,22 @@ class TestGitSmartHTTP(unittest.TestCase):
 
         cls.server_thread = threading.Thread(
             target=run_server,
-            args=(cls.host, cls.port, str(cls.repo_dir), cls.trusted_addresses),
+            args=("::", cls.port, str(cls.repo_dir), cls.trusted_addresses),
             daemon=True
         )
         cls.server_thread.start()
-        time.sleep(1)  # Wait for server to start
+        
+        # Wait for server to start by polling
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{cls.port}/", timeout=1) as r:
+                    if r.status == 200:
+                        break
+            except Exception:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError("Server failed to start within timeout")
 
     @classmethod
     def tearDownClass(cls):

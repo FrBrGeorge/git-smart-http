@@ -282,19 +282,27 @@ class DualStackHTTPServer(HTTPServer):
     """
     HTTP Server that supports both IPv4 and IPv6.
     """
-    address_family = socket.AF_INET6
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
+        # Set address_family based on the host
+        host = server_address[0]
+        if ":" in host or host == "":
+            self.address_family = socket.AF_INET6
+        else:
+            self.address_family = socket.AF_INET
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
     def server_bind(self):
         """
         Bind the server to the address, ensuring dual-stack support if possible.
         """
-        try:
-            # Try to enable dual-stack support
-            if hasattr(socket, 'IPPROTO_IPV6') and hasattr(socket, 'IPV6_V6ONLY'):
-                self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-        except (AttributeError, socket.error):
-            # Fallback if dual-stack is not supported
-            pass
+        if self.address_family == socket.AF_INET6:
+            try:
+                # Try to enable dual-stack support
+                if hasattr(socket, 'IPPROTO_IPV6') and hasattr(socket, 'IPV6_V6ONLY'):
+                    self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except (AttributeError, socket.error):
+                # Fallback if dual-stack is not supported
+                pass
         super().server_bind()
 
 def run_server(host: str = "::", port: int = 3000, repo_dir: str = "repos", trusted_addresses: Optional[List[str]] = None):
