@@ -112,6 +112,9 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         :rtype: bool
         """
         client_address = self.client_address[0]
+        # Handle IPv4-mapped IPv6 addresses (e.g., ::ffff:127.0.0.1)
+        if client_address.startswith("::ffff:"):
+            client_address = client_address[7:]
         return client_address in self.trusted_addresses
 
     def send_headers(self, content_type: str, status: int = 200, cache_control: Optional[str] = None):
