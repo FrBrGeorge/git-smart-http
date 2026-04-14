@@ -5,70 +5,9 @@ import subprocess
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import List, Optional
+import importlib.resources
 
 logger = logging.getLogger(__name__)
-
-ROOT_HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Git Smart HTTP Server</title>
-    <style>
-        body {{ font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f9; color: #333; }}
-        h1 {{ border-bottom: 2px solid #333; padding-bottom: 10px; }}
-        h2 {{ color: #444; margin-top: 30px; }}
-        pre {{ background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; }}
-        ul {{ list-style: none; padding: 0; }}
-        li {{ background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
-        .repo-name {{ font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 5px; }}
-        .repo-name a {{ color: #333; text-decoration: none; }}
-        .repo-name a:hover {{ text-decoration: underline; color: #000; }}
-        .link-group {{ margin-top: 10px; }}
-        .link-label {{ font-size: 0.9em; color: #666; width: 100px; display: inline-block; }}
-        code {{ background: #f9f9f9; padding: 2px 5px; border-radius: 3px; font-family: monospace; }}
-        .trusted-info {{ font-size: 0.8em; color: #888; margin-top: 5px; }}
-    </style>
-</head>
-<body>
-    <h1>Git Smart HTTP Server</h1>
-    
-    <h2>Available Repositories</h2>
-    {repo_list_html}
-
-    <h2>How to Use</h2>
-    
-    <h3>Create a New Repository</h3>
-    <p>To create a new repository, simply clone a non-existent path from a trusted address:</p>
-    <pre>git clone http://127.0.0.1:{port}/my-new-repo
-cd my-new-repo
-# Add files, commit, and push back
-git push -u origin main</pre>
-
-    <h3>Clone an Existing Repository</h3>
-    <p>From any address:</p>
-    <pre>git clone http://{local_ip}:{port}/repository-name</pre>
-    
-    <p>From a trusted address (allows pushing back):</p>
-    <pre>git clone http://127.0.0.1:{port}/repository-name</pre>
-
-    <hr>
-    <p style="font-size: 0.8em; color: #777;">Server IP: {local_ip} | Port: {port}</p>
-</body>
-</html>
-"""
-
-REPO_ITEM_HTML_TEMPLATE = """
-<li>
-    <span class="repo-name"><a href="/{repo}/">{repo}</a></span>
-    <div class="link-group">
-        <span class="link-label">Read/Write:</span> <code>http://127.0.0.1:{port}/{repo}</code>
-        <div class="trusted-info">(Only accessible from trusted addresses: {trusted_addresses})</div>
-    </div>
-    <div class="link-group">
-        <span class="link-label">Read-Only:</span> <code>http://{local_ip}:{port}/{repo}</code>
-    </div>
-</li>
-"""
 
 def get_local_ip() -> str:
     """
@@ -116,6 +55,26 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         if client_address.startswith("::ffff:"):
             client_address = client_address[7:]
         return client_address in self.trusted_addresses
+
+    def log_message(self, format: str, *args):
+        """
+        Log an arbitrary message to the logger at INFO level.
+
+        :param format: The message format string.
+        :type format: str
+        :param args: Arguments for the format string.
+        """
+        logger.info("%s - - [%s] %s" % (self.address_string(), self.log_date_time_string(), format % args))
+
+    def log_error(self, format: str, *args):
+        """
+        Log an error message to the logger at ERROR level.
+
+        :param format: The message format string.
+        :type format: str
+        :param args: Arguments for the format string.
+        """
+        logger.error("%s - - [%s] %s" % (self.address_string(), self.log_date_time_string(), format % args))
 
     def send_headers(self, content_type: str, status: int = 200, cache_control: Optional[str] = None):
         """
@@ -190,8 +149,9 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         if repos:
             repo_items = []
             trusted_addresses_str = ", ".join(self.trusted_addresses)
+            repo_item_template = importlib.resources.read_text("git_smart_http.templates", "repo_item.html")
             for repo in repos:
-                item = REPO_ITEM_HTML_TEMPLATE.format(
+                item = repo_item_template.format(
                     repo=repo,
                     port=port,
                     trusted_addresses=trusted_addresses_str,
@@ -202,10 +162,13 @@ class GitSmartHTTPHandler(SimpleHTTPRequestHandler):
         else:
             repo_list_html = "<p>No repositories found.</p>"
 
-        html = ROOT_HTML_TEMPLATE.format(
+        root_template = importlib.resources.read_text("git_smart_http.templates", "root.html")
+        style = importlib.resources.read_text("git_smart_http.templates", "style.css")
+        html = root_template.format(
             repo_list_html=repo_list_html,
             local_ip=local_ip,
-            port=port
+            port=port,
+            style=style
         )
         self.wfile.write(html.encode('utf-8'))
 

@@ -7,6 +7,8 @@ from typing import Optional, List
 from .server import run_server
 from . import __version__
 
+logger = logging.getLogger(__name__)
+
 def setup_logging(verbose_level: int, logfile: Optional[str] = None):
     """
     Configure logging for the application.
@@ -82,8 +84,8 @@ def main(argv: Optional[List[str]] = None):
     setup_logging(args.verbose, args.logfile)
 
     server_url = f"http://127.0.0.1:{args.port}/"
-    if args.verbose == 1:
-        print(f"Server URL: {server_url}")
+    if args.verbose >= 1:
+        logger.warning(f"Server URL: {server_url}")
 
     if args.browser:
         webbrowser.open(server_url)

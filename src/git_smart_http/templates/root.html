@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Git Smart HTTP Server</title>
+    <style>
+        {style}
+    </style>
+</head>
+<body>
+    <h1>Git Smart HTTP Server</h1>
+    
+    <h2>Available Repositories</h2>
+    {repo_list_html}
+
+    <h2>How to Use</h2>
+    
+    <h3>Create a New Repository</h3>
+    <p>To create a new repository, simply clone a non-existent path from a trusted address:</p>
+    <pre>git clone http://127.0.0.1:{port}/my-new-repo
+cd my-new-repo
+# Add files, commit, and push back
+git push -u origin main</pre>
+
+    <h3>Clone an Existing Repository</h3>
+    <p>From any address:</p>
+    <pre>git clone http://{local_ip}:{port}/repository-name</pre>
+    
+    <p>From a trusted address (allows pushing back):</p>
+    <pre>git clone http://127.0.0.1:{port}/repository-name</pre>
+
+    <hr>
+    <p style="font-size: 0.8em; color: #777;">Server IP: {local_ip} | Port: {port}</p>
+</body>
+</html>

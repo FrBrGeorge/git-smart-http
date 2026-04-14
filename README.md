@@ -89,5 +89,5 @@ Open `http://127.0.0.1:3000/` in your browser to see the list of repositories us
 ## Development
 This project was built using **Google AI Studio**. To run tests:
 ```bash
-PYTHONPATH=src python3 -m pytest tests/test_server.py tests/test_ipv6.py
+PYTHONPATH=src python3 -m unittest discover tests
 ```
