@@ -22,7 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install .[test]
+        python -m pip install .
     - name: Run tests
       run: |
-        PYTHONPATH=src python3 -m pytest tests/
+        PYTHONPATH=src python3 -m unittest discover tests
